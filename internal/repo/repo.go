@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/mac125/gitid/internal/runner"
+	"github.com/seanho/gitid/internal/runner"
 )
 
 const backupPrefix = "gitid.backup."
@@ -18,7 +18,7 @@ type Remote struct {
 }
 
 type State struct {
-	Root    string
+	Root    string	
 	Profile string
 	Name    string
 	Email   string

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mac125/gitid/internal/app"
+	"github.com/seanho/gitid/internal/app"
 )
 
 func main() {

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mac125/gitid/internal/profile"
+	"github.com/seanho/gitid/internal/profile"
 )
 
 func TestRenderPreservesUnmanagedConfiguration(t *testing.T) {
