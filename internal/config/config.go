@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/seanho/gitid/internal/profile"
+	"github.com/seanhooo/gitid/internal/profile"
 )
 
 type Config struct {

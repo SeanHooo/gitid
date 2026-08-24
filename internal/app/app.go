@@ -10,11 +10,11 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/seanho/gitid/internal/config"
-	"github.com/seanho/gitid/internal/gh"
-	"github.com/seanho/gitid/internal/profile"
-	"github.com/seanho/gitid/internal/repo"
-	"github.com/seanho/gitid/internal/sshconfig"
+	"github.com/seanhooo/gitid/internal/config"
+	"github.com/seanhooo/gitid/internal/gh"
+	"github.com/seanhooo/gitid/internal/profile"
+	"github.com/seanhooo/gitid/internal/repo"
+	"github.com/seanhooo/gitid/internal/sshconfig"
 )
 
 type App struct {

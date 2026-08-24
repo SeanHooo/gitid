@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/seanho/gitid/internal/repo"
+	"github.com/seanhooo/gitid/internal/repo"
 )
 
 func TestUseSwitchesRepositoryAndRestoreReturnsOriginalState(t *testing.T) {

@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/seanho/gitid/internal/profile"
+	"github.com/seanhooo/gitid/internal/profile"
 )
 
 const startMarker = "# >>> gitid managed block >>>"

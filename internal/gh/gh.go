@@ -5,7 +5,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/seanho/gitid/internal/runner"
+	"github.com/seanhooo/gitid/internal/runner"
 )
 
 type Client struct {

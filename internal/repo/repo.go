@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/seanho/gitid/internal/runner"
+	"github.com/seanhooo/gitid/internal/runner"
 )
 
 const backupPrefix = "gitid.backup."
