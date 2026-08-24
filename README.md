@@ -1,15 +1,14 @@
 # gitid
 
-`gitid` switches the SSH identity used by the current Git repository without changing the Git commands you normally run. After `gitid use work`, continue with `git push`, `git pull`, and `git fetch` as usual.
+`gitid` switches the identity used by the current Git repository without changing the Git commands you normally run. After `gitid use work`, continue with `git push`, `git pull`, and `git fetch` as usual.
 
-## Phase 1 scope
+## Features
 
-- Named profiles with Git author identity and SSH key paths
+- Named profiles with Git author identity, SSH metadata, and an optional GitHub CLI username
 - SSH `Host` aliases managed in a marked block in `~/.ssh/config`
-- Repository-local Git identity and `origin` rewrite
+- Repository-local Git identity and `origin` rewrite for SSH or HTTPS
+- HTTPS mode that selects an already-authenticated GitHub CLI (`gh`) account without storing tokens
 - `status`, consistency diagnostics, and repository rollback
-
-HTTPS credential switching is intentionally deferred. An HTTPS origin can be converted to the selected profile's SSH alias by `gitid use`, but this version does not store or switch HTTPS credentials.
 
 ## Build
 
@@ -71,7 +70,40 @@ git@github-work:owner/repository.git
 
 The command writes the selected identity as repository-local `user.name`, `user.email`, and `gitid.profile`. It saves the previous local settings and origin before the first mutation.
 
-## Inspect and recover
+## HTTPS with GitHub CLI
+
+For HTTPS, Gitid delegates credentials to GitHub CLI. Authenticate each account before configuring or switching a profile:
+
+```sh
+gh auth login --hostname github.com
+# Repeat and select the other GitHub account.
+```
+
+Add the GitHub username to the profile. SSH fields are optional for an HTTPS-only profile:
+
+```sh
+./gitid account add personal \
+  --git-name "Personal Name" \
+  --email personal@example.com \
+  --github-user personal-github-login
+```
+
+In a repository, select HTTPS mode:
+
+```sh
+./gitid use personal --protocol https
+```
+
+Gitid verifies that `personal-github-login` is already authenticated through `gh`, switches `gh`'s active account, and rewrites the origin to `https://github.com/owner/repository.git`. Gitid never stores, reads, or displays a token. If the account is not available, authenticate it manually with `gh auth login`.
+
+SSH remains the default:
+
+```sh
+./gitid use work --protocol ssh
+```
+
+Because the active GitHub CLI account is global, `gitid restore` restores the repository's local identity and origin but does not change the active `gh` account.
+
 
 ```sh
 ./gitid status
@@ -79,10 +111,10 @@ The command writes the selected identity as repository-local `user.name`, `user.
 ./gitid restore
 ```
 
-`doctor` is offline-only in phase 1: it checks profile data, key existence, origin format, and the managed SSH entry; it does not contact GitHub. `restore` returns the current repository to the settings saved before the most recent `use`.
+`doctor` validates the selected profile against the active protocol. SSH checks key existence and the managed SSH entry; HTTPS checks that the configured GitHub account is already authenticated through `gh`. `restore` returns the current repository to the settings saved before the first `use`.
 
 ## Limitations
 
 - Supported origins are single-level `owner/repository` SSH or HTTP(S) URLs.
-- SSH is the authentication mechanism for phase 1.
-- This release does not switch HTTPS credentials, authenticate to Git hosting providers, or run `git push` itself.
+- SSH remains the default protocol; HTTPS currently supports GitHub accounts authenticated through `gh`.
+- Gitid does not run `git push`, call `gh auth login`, or manage access tokens itself.

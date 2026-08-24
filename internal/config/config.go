@@ -60,7 +60,7 @@ func (c Config) Add(item profile.Profile) (Config, error) {
 		return c, fmt.Errorf("profile %q already exists", item.Name)
 	}
 	for _, existing := range c.Profiles {
-		if existing.HostAlias == item.HostAlias {
+		if item.HostAlias != "" && existing.HostAlias == item.HostAlias {
 			return c, fmt.Errorf("SSH host alias %q is already used by profile %q", item.HostAlias, existing.Name)
 		}
 	}

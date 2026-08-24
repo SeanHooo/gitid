@@ -18,7 +18,7 @@ type Remote struct {
 }
 
 type State struct {
-	Root    string	
+	Root    string
 	Profile string
 	Name    string
 	Email   string
@@ -66,6 +66,10 @@ func ParseRemote(value string) (Remote, error) {
 
 func (remote Remote) SSHURL(alias string) string {
 	return fmt.Sprintf("git@%s:%s/%s.git", alias, remote.Owner, remote.Name)
+}
+
+func (remote Remote) HTTPSURL() string {
+	return fmt.Sprintf("https://%s/%s/%s.git", remote.Host, remote.Owner, remote.Name)
 }
 
 func (r Repository) Backup(state State) error {

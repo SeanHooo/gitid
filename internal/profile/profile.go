@@ -11,12 +11,13 @@ import (
 var namePattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$`)
 
 type Profile struct {
-	Name      string `json:"name"`
-	GitName   string `json:"gitName"`
-	Email     string `json:"email"`
-	KeyPath   string `json:"keyPath"`
-	HostAlias string `json:"hostAlias"`
-	HostName  string `json:"hostName"`
+	Name       string `json:"name"`
+	GitName    string `json:"gitName"`
+	Email      string `json:"email"`
+	GitHubUser string `json:"githubUser,omitempty"`
+	KeyPath    string `json:"keyPath,omitempty"`
+	HostAlias  string `json:"hostAlias,omitempty"`
+	HostName   string `json:"hostName,omitempty"`
 }
 
 func (p Profile) Validate() error {
@@ -28,6 +29,13 @@ func (p Profile) Validate() error {
 	}
 	if !strings.Contains(p.Email, "@") {
 		return fmt.Errorf("a valid email is required")
+	}
+	return nil
+}
+
+func (p Profile) ValidateSSH() error {
+	if err := p.Validate(); err != nil {
+		return err
 	}
 	if strings.TrimSpace(p.KeyPath) == "" {
 		return fmt.Errorf("SSH key path is required")
@@ -44,6 +52,16 @@ func (p Profile) Validate() error {
 	}
 	if info.IsDir() {
 		return fmt.Errorf("SSH key %q is a directory", p.KeyPath)
+	}
+	return nil
+}
+
+func (p Profile) ValidateHTTPS() error {
+	if err := p.Validate(); err != nil {
+		return err
+	}
+	if strings.TrimSpace(p.GitHubUser) == "" {
+		return fmt.Errorf("GitHub username is required for HTTPS mode (use --github-user)")
 	}
 	return nil
 }
