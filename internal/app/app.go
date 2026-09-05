@@ -15,6 +15,7 @@ import (
 	"github.com/seanhooo/gitid/internal/profile"
 	"github.com/seanhooo/gitid/internal/repo"
 	"github.com/seanhooo/gitid/internal/sshconfig"
+	"github.com/seanhooo/gitid/internal/version"
 )
 
 type App struct {
@@ -48,6 +49,9 @@ func (a App) Run(args []string) error {
 		return a.doctor()
 	case "restore":
 		return a.restore(args[1:])
+	case "version", "--version", "-v":
+		fmt.Fprintln(a.Output, version.String())
+		return nil
 	case "help", "--help", "-h":
 		a.usage()
 		return nil
