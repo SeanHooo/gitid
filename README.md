@@ -10,7 +10,32 @@
 - HTTPS mode that selects an already-authenticated GitHub CLI (`gh`) account without storing tokens
 - `status`, consistency diagnostics, and repository rollback
 
-## Build
+## Development
+
+```sh
+make fmt
+make check
+make build
+./bin/gitid version
+make install
+```
+
+`make build` writes the local binary to `bin/gitid`. `make install` installs it with `go install`. Build metadata can be overridden for release builds:
+
+```sh
+make build VERSION=v0.2.0 COMMIT=$(git rev-parse --short HEAD) DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+```
+
+Every push and pull request is checked by GitHub Actions on Linux, macOS, and Windows. Tagged releases are prepared by GoReleaser. After installing GoReleaser and configuring the repository release credentials, create a tag and run:
+
+```sh
+git tag v0.2.0
+git push origin v0.2.0
+goreleaser release --clean
+```
+
+The release configuration produces macOS, Linux, and Windows archives plus checksums. It is configured to create draft GitHub Releases so publishing remains an explicit maintainer action.
+
 
 ```sh
 go build -o gitid ./cmd/gitid
