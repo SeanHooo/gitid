@@ -1,0 +1,46 @@
+version: 2
+
+project_name: gitid
+
+before:
+  hooks:
+    - go mod tidy
+    - go test ./...
+
+builds:
+  - id: gitid
+    main: ./cmd/gitid
+    binary: gitid
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w
+      - -X github.com/seanhooo/gitid/internal/version.Version={{.Version}}
+      - -X github.com/seanhooo/gitid/internal/version.Commit={{.Commit}}
+      - -X github.com/seanhooo/gitid/internal/version.Date={{.Date}}
+
+archives:
+  - formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - README.md
+
+checksum:
+  name_template: checksums.txt
+
+release:
+  github:
+    owner: seanhooo
+    name: gitid
+  draft: true
+  prerelease: auto

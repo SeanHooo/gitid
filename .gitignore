@@ -1,0 +1,11 @@
+# Local binaries and generated output
+/gitid
+/bin/
+*.test
+coverage.out
+coverage.html
+
+# OS and editor files
+.DS_Store
+.vscode/
+.idea/
