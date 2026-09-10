@@ -13,7 +13,7 @@ func main() {
 		err = program.Run(os.Args[1:])
 	}
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "gitid:", err)
+		fmt.Fprintln(os.Stderr, app.Red("gitid: "+err.Error(), os.Stderr))
 		os.Exit(1)
 	}
 }

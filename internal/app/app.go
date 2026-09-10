@@ -23,6 +23,7 @@ type App struct {
 	Input  io.Reader
 	Output io.Writer
 	Repo   repo.Repository
+	Color  bool
 }
 
 func New() (App, error) {
@@ -30,7 +31,7 @@ func New() (App, error) {
 	if err != nil {
 		return App{}, err
 	}
-	return App{Home: home, Input: os.Stdin, Output: os.Stdout, Repo: repo.New()}, nil
+	return App{Home: home, Input: os.Stdin, Output: os.Stdout, Repo: repo.New(), Color: colorEnabled(os.Stdout)}, nil
 }
 
 func (a App) Run(args []string) error {
@@ -127,7 +128,7 @@ func (a App) accountAdd(args []string) error {
 	if err := config.Save(a.Home, settings); err != nil {
 		return err
 	}
-	fmt.Fprintf(a.Output, "Added profile %q.\n", item.Name)
+	fmt.Fprintf(a.Output, "%s profile %q.\n", a.green("Added"), item.Name)
 	return nil
 }
 
@@ -161,7 +162,7 @@ func (a App) accountRemove(args []string) error {
 	if err := config.Save(a.Home, settings); err != nil {
 		return err
 	}
-	fmt.Fprintf(a.Output, "Removed profile %q.\n", flags.Arg(0))
+	fmt.Fprintf(a.Output, "%s profile %q.\n", a.green("Removed"), flags.Arg(0))
 	return nil
 }
 
@@ -210,7 +211,10 @@ func (a App) use(args []string) error {
 	if *protocol == "https" {
 		newRemote = parsed.HTTPSURL()
 	}
-	fmt.Fprintf(a.Output, "Repository: %s\nProfile:    %s <%s>\nProtocol:   %s\nOrigin:     %s\n", state.Root, item.GitName, item.Email, *protocol, newRemote)
+	fmt.Fprintf(a.Output, "%s %s\n", a.label("Repository:"), state.Root)
+	fmt.Fprintf(a.Output, "%s %s <%s>\n", a.label("Profile:"), a.identity(item.GitName), a.strong(item.Email))
+	fmt.Fprintf(a.Output, "%s %s\n", a.label("Protocol:"), *protocol)
+	fmt.Fprintf(a.Output, "%s %s\n", a.label("Origin:"), newRemote)
 	if !*yes && !a.confirm("Apply these changes?") {
 		return nil
 	}
@@ -228,9 +232,9 @@ func (a App) use(args []string) error {
 		return err
 	}
 	if *protocol == "https" {
-		fmt.Fprintf(a.Output, "Switched this repository to HTTPS profile %q.\n", item.Name)
+		fmt.Fprintf(a.Output, "%s this repository to HTTPS profile %q.\n", a.green("Switched"), item.Name)
 	} else {
-		fmt.Fprintf(a.Output, "Switched this repository to profile %q.\n", item.Name)
+		fmt.Fprintf(a.Output, "%s this repository to profile %q.\n", a.green("Switched"), item.Name)
 	}
 	return nil
 }
@@ -244,7 +248,11 @@ func (a App) status() error {
 	if strings.HasPrefix(state.Origin, "https://") || strings.HasPrefix(state.Origin, "http://") {
 		protocol = "https"
 	}
-	fmt.Fprintf(a.Output, "Repository: %s\nProfile:    %s\nProtocol:   %s\nGit user:   %s <%s>\nOrigin:     %s\n", state.Root, empty(state.Profile, "(none)"), protocol, empty(state.Name, "(unset)"), empty(state.Email, "(unset)"), state.Origin)
+	fmt.Fprintf(a.Output, "%s %s\n", a.label("Repository:"), state.Root)
+	fmt.Fprintf(a.Output, "%s %s\n", a.label("Profile:"), a.identity(empty(state.Profile, "(none)")))
+	fmt.Fprintf(a.Output, "%s %s\n", a.label("Protocol:"), protocol)
+	fmt.Fprintf(a.Output, "%s %s <%s>\n", a.label("Git user:"), a.strong(empty(state.Name, "(unset)")), a.strong(empty(state.Email, "(unset)")))
+	fmt.Fprintf(a.Output, "%s %s\n", a.label("Origin:"), state.Origin)
 	return nil
 }
 
@@ -257,7 +265,7 @@ func (a App) doctor() error {
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(a.Output, "Repository: %s\n", state.Root)
+	fmt.Fprintf(a.Output, "%s %s\n", a.label("Repository:"), state.Root)
 	if state.Profile == "" {
 		return errors.New("no profile is bound to this repository")
 	}
@@ -282,7 +290,7 @@ func (a App) doctor() error {
 		if state.Origin != remote.HTTPSURL() {
 			return fmt.Errorf("origin does not use the expected HTTPS URL; expected %s", remote.HTTPSURL())
 		}
-		fmt.Fprintln(a.Output, "OK: profile, local Git identity, HTTPS origin, and GitHub CLI account are consistent.")
+		fmt.Fprintf(a.Output, "%s profile, local Git identity, HTTPS origin, and GitHub CLI account are consistent.\n", a.ok())
 		return nil
 	}
 	if err := item.ValidateSSH(); err != nil {
@@ -296,7 +304,7 @@ func (a App) doctor() error {
 	if err != nil || !hasHost {
 		return fmt.Errorf("SSH config does not contain a valid entry for %q", item.HostAlias)
 	}
-	fmt.Fprintln(a.Output, "OK: profile, local Git identity, origin, SSH key, and SSH config are consistent.")
+	fmt.Fprintf(a.Output, "%s profile, local Git identity, origin, SSH key, and SSH config are consistent.\n", a.ok())
 	return nil
 }
 
@@ -317,7 +325,7 @@ func (a App) restore(args []string) error {
 	if err := a.Repo.Restore(); err != nil {
 		return err
 	}
-	fmt.Fprintln(a.Output, "Restored the previous repository settings.")
+	fmt.Fprintf(a.Output, "%s the previous repository settings.\n", a.green("Restored"))
 	return nil
 }
 
@@ -328,7 +336,67 @@ func (a App) confirm(prompt string) bool {
 }
 
 func (a App) usage() {
-	fmt.Fprintln(a.Output, "Usage: gitid <account|use|status|doctor|restore>")
+	out := a.Output
+	fmt.Fprintf(out, "%s switches the Git identity (author name, email, and origin) used\n", a.prog())
+	fmt.Fprintln(out, "by the current repository, without changing how you run git.")
+	fmt.Fprintln(out)
+
+	fmt.Fprintln(out, a.header("Usage:"))
+	fmt.Fprintf(out, "  %s %s %s\n", a.prog(), a.dim("<command>"), a.dim("[flags]"))
+	fmt.Fprintln(out)
+
+	fmt.Fprintln(out, a.header("Commands:"))
+	for _, c := range []struct {
+		name, desc string
+	}{
+		{"account", "Manage named profiles"},
+		{"use", "Apply a profile to the current repository"},
+		{"status", "Show the current repository identity and origin"},
+		{"doctor", "Verify the repository identity is consistent"},
+		{"restore", "Roll back to the previous repository settings"},
+		{"version", "Print version information"},
+		{"help", "Show this help"},
+	} {
+		fmt.Fprintf(out, "  %s %s\n", a.green(padRight(c.name, 9)), c.desc)
+	}
+	fmt.Fprintln(out)
+
+	fmt.Fprintln(out, a.header("Account subcommands:"))
+	fmt.Fprintf(out, "  %s %s %s %s %s\n", a.prog(), a.green("account"), a.green("add"), a.dim("<name>"), a.dim("--git-name NAME --email EMAIL [flags]"))
+	fmt.Fprintf(out, "  %s %s %s\n", a.prog(), a.green("account"), a.green("list"))
+	fmt.Fprintf(out, "  %s %s %s %s\n", a.prog(), a.green("account"), a.green("remove"), a.dim("<name> [--yes]"))
+	fmt.Fprintln(out)
+
+	fmt.Fprintln(out, a.header("account add flags:"))
+	fmt.Fprintf(out, "      %s %s\n", a.yellow("--git-name NAME"), "Git author name (required)")
+	fmt.Fprintf(out, "      %s %s\n", a.yellow("--email EMAIL"), "Git author email (required)")
+	fmt.Fprintf(out, "      %s %s\n", a.yellow("--github-user USER"), "GitHub username for HTTPS mode")
+	fmt.Fprintf(out, "      %s %s\n", a.yellow("--key PATH"), "SSH private key path (~ is expanded)")
+	fmt.Fprintf(out, "      %s %s\n", a.yellow("--host-alias ALIAS"), "SSH Host alias, e.g. github-work")
+	fmt.Fprintf(out, "      %s %s\n", a.yellow("--host HOST"), "Remote hostname (default github.com)")
+	fmt.Fprintln(out)
+
+	fmt.Fprintln(out, a.header("use flags:"))
+	fmt.Fprintf(out, "      %s %s\n", a.yellow("--protocol ssh|https"), "Protocol to use (default ssh)")
+	fmt.Fprintf(out, "      %s %s\n", a.yellow("--yes"), "Apply without confirmation")
+	fmt.Fprintln(out)
+
+	fmt.Fprintln(out, a.header("restore flags:"))
+	fmt.Fprintf(out, "      %s %s\n", a.yellow("--yes"), "Restore without confirmation")
+	fmt.Fprintln(out)
+
+	fmt.Fprintln(out, a.header("Examples:"))
+	fmt.Fprintf(out, "  %s account add work --git-name \"Work Name\" --email work@example.com --key ~/.ssh/id_ed25519_work --host-alias github-work\n", a.prog())
+	fmt.Fprintf(out, "  %s use work\n", a.prog())
+	fmt.Fprintf(out, "  %s use work --protocol https\n", a.prog())
+	fmt.Fprintf(out, "  %s status\n", a.prog())
+	fmt.Fprintf(out, "  %s doctor\n", a.prog())
+	fmt.Fprintf(out, "  %s restore\n", a.prog())
+	fmt.Fprintln(out)
+
+	fmt.Fprintln(out, "Profiles are stored in ~/.config/gitid/config.json. SSH Host aliases are")
+	fmt.Fprintln(out, "managed in a marked block in ~/.ssh/config. HTTPS mode uses an already")
+	fmt.Fprintln(out, "authenticated GitHub CLI (gh) account and never stores tokens.")
 }
 
 func empty(value, fallback string) string {

@@ -47,6 +47,30 @@ func TestUseSwitchesRepositoryAndRestoreReturnsOriginalState(t *testing.T) {
 	}
 }
 
+func TestUsageOmitsColorWhenDisabled(t *testing.T) {
+	output := &bytes.Buffer{}
+	application := App{Output: output, Color: false}
+	application.usage()
+	text := output.String()
+	if strings.Contains(text, "\x1b[") {
+		t.Fatalf("usage contains ANSI codes when color is disabled")
+	}
+	for _, want := range []string{"account add", "--git-name", "--protocol ssh|https", "gitid restore"} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("usage is missing %q", want)
+		}
+	}
+}
+
+func TestUsageAddsColorWhenEnabled(t *testing.T) {
+	output := &bytes.Buffer{}
+	application := App{Output: output, Color: true}
+	application.usage()
+	if text := output.String(); !strings.Contains(text, "\x1b[") {
+		t.Fatalf("usage has no ANSI codes when color is enabled")
+	}
+}
+
 func git(t *testing.T, directory string, arguments ...string) string {
 	t.Helper()
 	command := exec.Command("git", arguments...)
